@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pull Competition Bets (Auto Odds)</title>
+  <style>
+    body { font-family: Arial; background: #111; color: #fff; padding: 20px; }
+    input, select, button { padding: 8px; margin: 5px; }
+    .card { background: #222; padding: 15px; margin: 10px 0; border-radius: 8px; }
+  </style>
+</head>
+<body>
+
+<h1>🏋️ Pull Competition Betting (Auto Odds)</h1>
+
+<div class="card">
+  <h2>Add Competitor</h2>
+  <input id="compName" placeholder="Name">
+  <button onclick="addCompetitor()">Add</button>
+</div>
+
+<div class="card">
+  <h2>Place Bet</h2>
+  <input id="bettor" placeholder="Your Name">
+  <select id="competitorSelect"></select>
+  <input id="amount" placeholder="Bet Amount">
+  <button onclick="placeBet()">Place Bet</button>
+</div>
+
+<div class="card">
+  <h2>Set Winner</h2>
+  <select id="winnerSelect"></select>
+  <button onclick="setWinner()">Set Winner & Calculate</button>
+</div>
+
+<div class="card">
+  <h2>Pool & Auto Odds</h2>
+  <ul id="pool"></ul>
+</div>
+
+<div class="card">
+  <h2>Bets</h2>
+  <ul id="bets"></ul>
+</div>
+
+<div class="card">
+  <h2>Payouts</h2>
+  <ul id="payouts"></ul>
+</div>
+
+<script>
+let competitors = [];
+let bets = [];
+
+function refreshUI() {
+  const compSelect = document.getElementById("competitorSelect");
+  const winSelect = document.getElementById("winnerSelect");
+  const poolList = document.getElementById("pool");
+  const betList = document.getElementById("bets");
+
+  compSelect.innerHTML = "";
+  winSelect.innerHTML = "";
+  poolList.innerHTML = "";
+  betList.innerHTML = "";
+
+  let totalPool = bets.reduce((sum, b) => sum + b.amount, 0);
+
+  competitors.forEach(c => {
+    const compPool = bets
+      .filter(b => b.competitor === c.name)
+      .reduce((sum, b) => sum + b.amount, 0);
+
+    let odds = compPool > 0 ? (totalPool / compPool) : 0;
+
+    poolList.innerHTML += 
+      `<li>${c.name} — Bet Pool: $${compPool.toFixed(2)} | Odds: x${odds.toFixed(2)}</li>`;
+
+    compSelect.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+    winSelect.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+  });
+
+  bets.forEach(b => {
+    betList.innerHTML += `<li>${b.bettor} bet $${b.amount} on ${b.competitor}</li>`;
+  });
+}
+
+function addCompetitor() {
+  if (!compName.value) return;
+  competitors.push({ name: compName.value });
+  compName.value = "";
+  refreshUI();
+}
+
+function placeBet() {
+  if (!bettor.value || !amount.value) return;
+
+  bets.push({
+    bettor: bettor.value,
+    competitor: competitorSelect.value,
+    amount: parseFloat(amount.value)
+  });
+
+  amount.value = "";
+  refreshUI();
+}
+
+function setWinner() {
+  const winner = winnerSelect.value;
+  const payoutList = document.getElementById("payouts");
+  payoutList.innerHTML = "";
+
+  const totalPool = bets.reduce((sum, b) => sum + b.amount, 0);
+  const winnerPool = bets
+    .filter(b => b.competitor === winner)
+    .reduce((sum, b) => sum + b.amount, 0);
+
+  const odds = totalPool / winnerPool;
+
+  bets.forEach(b => {
+    if (b.competitor === winner) {
+      const payout = b.amount * odds;
+      payoutList.innerHTML += 
+        `<li>${b.bettor} wins $${payout.toFixed(2)}</li>`;
+    } else {
+      payoutList.innerHTML += 
+        `<li>${b.bettor} loses $${b.amount.toFixed(2)}</li>`;
+    }
+  });
+}
+</script>
+
+</body>
+</html>
